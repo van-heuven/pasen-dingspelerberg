@@ -3,6 +3,31 @@
 
 {% block extra_css %}
 <style>
+    /* ── Aankondiging ── */
+    .aankondiging-box {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border-left: 5px solid #f59e0b;
+        border-radius: 14px;
+        padding: 1.1rem 1.4rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 10px rgba(245,158,11,0.15);
+    }
+    .aankondiging-box .ak-titel {
+        font-weight: 800;
+        color: #92400e;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 0.4rem;
+    }
+    .aankondiging-box .ak-tekst {
+        color: #1a1a2e;
+        font-size: 1rem;
+        white-space: pre-line;
+        line-height: 1.6;
+    }
+
+    /* ── Stats ── */
     .stats-bar {
         display: flex;
         gap: 1rem;
@@ -16,25 +41,74 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.07);
         text-align: center;
         flex: 1;
-        min-width: 120px;
+        min-width: 110px;
     }
-    .stat .number {
-        font-size: 2rem;
-        font-weight: 800;
-        color: #a855f7;
-    }
-    .stat .label {
-        font-size: 0.85rem;
-        color: #6b7280;
-        margin-top: 0.2rem;
-    }
+    .stat .number { font-size: 2rem; font-weight: 800; color: #a855f7; }
+    .stat .label  { font-size: 0.82rem; color: #6b7280; margin-top: 0.2rem; }
 
+    /* ── Locatie + Weer ── */
+    .locatie-weer {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.2rem;
+        margin-bottom: 1.5rem;
+    }
+    @media (max-width: 640px) { .locatie-weer { grid-template-columns: 1fr; } }
+
+    .locatie-box {
+        background: white;
+        border-radius: 16px;
+        padding: 1.2rem 1.5rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+    .locatie-info h3 { font-size: 1rem; color: #1a1a2e; margin-bottom: 0.3rem; }
+    .locatie-info p  { font-size: 0.95rem; color: #555; margin: 0; }
+    .locatie-info a  {
+        display: inline-block; margin-top: 0.5rem;
+        font-size: 0.85rem; color: #7c3aed;
+        text-decoration: none; font-weight: 600;
+    }
+    .locatie-info a:hover { text-decoration: underline; }
+    .kaart-wrapper {
+        border-radius: 10px; overflow: hidden;
+        height: 150px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .kaart-wrapper iframe { width: 100%; height: 100%; border: 0; }
+
+    /* ── Weer ── */
+    .weer-box {
+        background: white;
+        border-radius: 16px;
+        padding: 1.2rem 1.5rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+    }
+    .weer-box h3 { font-size: 1rem; color: #1a1a2e; margin-bottom: 0.8rem; }
+    .weer-dagen  { display: flex; gap: 0.8rem; }
+    .weer-dag {
+        flex: 1;
+        background: linear-gradient(135deg, #eff6ff, #e0f2fe);
+        border-radius: 12px;
+        padding: 0.9rem 0.7rem;
+        text-align: center;
+    }
+    .weer-dag .dag-naam  { font-size: 0.75rem; font-weight: 700; color: #1e40af; text-transform: uppercase; }
+    .weer-dag .weer-icon { font-size: 2rem; margin: 0.4rem 0; }
+    .weer-dag .weer-omschrijving { font-size: 0.75rem; color: #374151; margin-bottom: 0.4rem; }
+    .weer-dag .temp {
+        font-size: 0.85rem; font-weight: 700; color: #1a1a2e;
+    }
+    .weer-dag .weer-detail { font-size: 0.72rem; color: #6b7280; margin-top: 0.3rem; }
+    .weer-laden { color: #9ca3af; font-style: italic; font-size: 0.9rem; }
+
+    /* ── Gezin cards ── */
     .gezin-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
         gap: 1.2rem;
     }
-
     .gezin-card {
         background: white;
         border-radius: 16px;
@@ -43,139 +117,85 @@
         border-top: 4px solid #f9a8d4;
         transition: transform 0.15s, box-shadow 0.15s;
     }
-
-    .gezin-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-    }
-
+    .gezin-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
     .gezin-card:nth-child(3n+1) { border-top-color: #86efac; }
     .gezin-card:nth-child(3n+2) { border-top-color: #fde68a; }
     .gezin-card:nth-child(3n+3) { border-top-color: #f9a8d4; }
 
-    .gezin-naam {
-        font-size: 1.15rem;
-        font-weight: 700;
-        color: #1a1a2e;
-        margin-bottom: 0.8rem;
+    .gezin-naam { font-size: 1.1rem; font-weight: 700; color: #1a1a2e; margin-bottom: 0.3rem; }
+
+    .personen-tags { margin-bottom: 0.7rem; }
+    .persoon-tag {
+        display: inline-block;
+        background: #f3f4f6;
+        color: #374151;
+        border-radius: 20px;
+        padding: 0.15rem 0.6rem;
+        font-size: 0.78rem;
+        margin: 0.15rem 0.1rem;
     }
 
     .sectie-label {
-        font-size: 0.78rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-        margin-bottom: 0.4rem;
-        margin-top: 0.8rem;
+        font-size: 0.76rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.7px;
+        margin-bottom: 0.3rem; margin-top: 0.7rem;
     }
-
-    .sectie-eten .sectie-label { color: #92400e; }
+    .sectie-eten .sectie-label   { color: #92400e; }
     .sectie-drinken .sectie-label { color: #1e40af; }
 
-    .item-lijst {
-        list-style: none;
-        padding: 0;
-    }
-
+    .item-lijst { list-style: none; padding: 0; }
     .item-lijst li {
-        padding: 0.25rem 0;
-        font-size: 0.9rem;
-        color: #374151;
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
+        padding: 0.22rem 0; font-size: 0.88rem; color: #374151;
+        display: flex; align-items: center; gap: 0.4rem;
     }
-
-    .item-lijst li::before {
-        content: '•';
-        color: #d1d5db;
-    }
-
-    .leeg {
-        color: #9ca3af;
-        font-style: italic;
-        font-size: 0.85rem;
-    }
+    .item-lijst li::before { content: '•'; color: #d1d5db; }
+    .leeg { color: #9ca3af; font-style: italic; font-size: 0.82rem; }
 
     .bewerk-link {
-        display: block;
-        margin-top: 1rem;
-        text-align: center;
-        font-size: 0.85rem;
-        color: #a855f7;
-        text-decoration: none;
-        padding: 0.4rem;
-        border-radius: 8px;
-        border: 1px dashed #d8b4fe;
+        display: block; margin-top: 1rem; text-align: center;
+        font-size: 0.85rem; color: #a855f7; text-decoration: none;
+        padding: 0.4rem; border-radius: 8px; border: 1px dashed #d8b4fe;
         transition: background 0.2s;
     }
-    .bewerk-link:hover {
-        background: #faf5ff;
-    }
+    .bewerk-link:hover { background: #faf5ff; }
 
-    .empty-state {
-        text-align: center;
-        padding: 3rem;
-        color: #9ca3af;
-    }
-    .empty-state .icon {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-    }
-
-    .locatie-box {
-        background: white;
-        border-radius: 16px;
-        padding: 1.2rem 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.07);
-        display: flex;
-        gap: 1.5rem;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-    .locatie-info { flex: 1; min-width: 180px; }
-    .locatie-info h3 { font-size: 1rem; color: #1a1a2e; margin-bottom: 0.3rem; }
-    .locatie-info p { font-size: 0.95rem; color: #555; margin: 0; }
-    .locatie-info a {
-        display: inline-block;
-        margin-top: 0.6rem;
-        font-size: 0.85rem;
-        color: #7c3aed;
-        text-decoration: none;
-        font-weight: 600;
-    }
-    .locatie-info a:hover { text-decoration: underline; }
-    .kaart-wrapper {
-        flex: 2;
-        min-width: 260px;
-        border-radius: 12px;
-        overflow: hidden;
-        height: 180px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .kaart-wrapper iframe { width: 100%; height: 100%; border: 0; }
+    .empty-state { text-align: center; padding: 3rem; color: #9ca3af; }
+    .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
 </style>
 {% endblock %}
 
 {% block content %}
 
+<!-- Aankondiging (alleen tonen als er tekst is) -->
+{% if aankondiging %}
+<div class="aankondiging-box">
+    <div class="ak-titel">📢 Informatie van de organisatie</div>
+    <div class="ak-tekst">{{ aankondiging }}</div>
+</div>
+{% endif %}
+
 <!-- Statistieken -->
 {% set totaal_eten = [] %}
 {% set totaal_drinken = [] %}
+{% set totaal_personen = [] %}
 {% for id, g in data.items() %}
   {% for _ in g.eten %}{% if totaal_eten.append(1) %}{% endif %}{% endfor %}
   {% for _ in g.drinken %}{% if totaal_drinken.append(1) %}{% endif %}{% endfor %}
+  {% for _ in g.personen %}{% if totaal_personen.append(1) %}{% endif %}{% endfor %}
 {% endfor %}
 
 <div class="stats-bar">
     <div class="stat">
         <div class="number">{{ data|length }}</div>
-        <div class="label">Gezinnen</div>
+        <div class="label">👨‍👩‍👧 Gezinnen</div>
+    </div>
+    <div class="stat">
+        <div class="number">{{ totaal_personen|length }}</div>
+        <div class="label">🙋 Personen</div>
     </div>
     <div class="stat">
         <div class="number">{{ totaal_eten|length }}</div>
-        <div class="label">🍽️ Etenswaren</div>
+        <div class="label">🍽️ Gerechten</div>
     </div>
     <div class="stat">
         <div class="number">{{ totaal_drinken|length }}</div>
@@ -183,23 +203,32 @@
     </div>
 </div>
 
-<!-- Locatie -->
-<div class="locatie-box">
-    <div class="locatie-info">
-        <h3>📍 Locatie</h3>
-        <p><strong>Enkelaarsweg 1</strong><br>7475 MS Markelo</p>
-        <a href="https://maps.google.com/?q=Enkelaarsweg+1,+Markelo" target="_blank">
-            🗺️ Open in Google Maps
-        </a>
+<!-- Locatie + Weer naast elkaar -->
+<div class="locatie-weer">
+
+    <div class="locatie-box">
+        <div class="locatie-info">
+            <h3>📍 Locatie</h3>
+            <p><strong>Enkelaarsweg 1</strong><br>7475 MS Markelo</p>
+            <a href="https://maps.google.com/?q=Enkelaarsweg+1,+Markelo" target="_blank">
+                🗺️ Open in Google Maps
+            </a>
+        </div>
+        <div class="kaart-wrapper">
+            <iframe
+                src="https://maps.google.com/maps?q=Enkelaarsweg+1,+Markelo,+Nederland&output=embed&z=15"
+                allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+            </iframe>
+        </div>
     </div>
-    <div class="kaart-wrapper">
-        <iframe
-            src="https://maps.google.com/maps?q=Enkelaarsweg+1,+Markelo,+Nederland&output=embed&z=15"
-            allowfullscreen
-            loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade">
-        </iframe>
+
+    <div class="weer-box">
+        <h3>🌤️ Weer op Pasen – Markelo</h3>
+        <div id="weer-inhoud">
+            <span class="weer-laden">Weersvoorspelling laden…</span>
+        </div>
     </div>
+
 </div>
 
 <!-- Gezinnen -->
@@ -209,30 +238,30 @@
     <div class="gezin-card">
         <div class="gezin-naam">👨‍👩‍👧 {{ gezin.naam }}</div>
 
+        {% if gezin.personen %}
+        <div class="personen-tags">
+            {% for naam in gezin.personen %}
+            <span class="persoon-tag">{{ naam }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <div class="sectie-eten">
             <div class="sectie-label">🍽️ Eten</div>
             {% if gezin.eten %}
             <ul class="item-lijst">
-                {% for item in gezin.eten %}
-                <li>{{ item }}</li>
-                {% endfor %}
+                {% for item in gezin.eten %}<li>{{ item }}</li>{% endfor %}
             </ul>
-            {% else %}
-            <span class="leeg">Nog niets opgegeven</span>
-            {% endif %}
+            {% else %}<span class="leeg">Nog niets opgegeven</span>{% endif %}
         </div>
 
         <div class="sectie-drinken">
             <div class="sectie-label">🥤 Drinken</div>
             {% if gezin.drinken %}
             <ul class="item-lijst">
-                {% for item in gezin.drinken %}
-                <li>{{ item }}</li>
-                {% endfor %}
+                {% for item in gezin.drinken %}<li>{{ item }}</li>{% endfor %}
             </ul>
-            {% else %}
-            <span class="leeg">Nog niets opgegeven</span>
-            {% endif %}
+            {% else %}<span class="leeg">Nog niets opgegeven</span>{% endif %}
         </div>
 
         <a href="{{ url_for('bewerk', token=gezin.token) }}" class="bewerk-link">✏️ Aanpassen</a>
@@ -244,9 +273,54 @@
 <div class="empty-state">
     <div class="icon">🐣</div>
     <h2>Nog geen gezinnen aangemeld</h2>
-    <p style="margin: 0.5rem 0 1.5rem">Voeg je eigen gezin toe om te beginnen!</p>
+    <p style="margin:0.5rem 0 1.5rem">Voeg je eigen gezin toe om te beginnen!</p>
     <a href="{{ url_for('aanmelden') }}" class="btn btn-primary">Eerste gezin toevoegen</a>
 </div>
 {% endif %}
+
+<script>
+const WEER_CODES = {
+  0:['☀️','Zonnig'], 1:['🌤️','Licht bewolkt'], 2:['⛅','Halfbewolkt'],
+  3:['☁️','Bewolkt'], 45:['🌫️','Mist'], 48:['🌫️','Rijpmist'],
+  51:['🌦️','Motregen'], 53:['🌦️','Motregen'], 55:['🌧️','Zware motregen'],
+  61:['🌧️','Lichte regen'], 63:['🌧️','Regen'], 65:['🌧️','Zware regen'],
+  71:['❄️','Lichte sneeuw'], 73:['❄️','Sneeuw'], 75:['❄️','Zware sneeuw'],
+  80:['🌦️','Lichte buien'], 81:['🌧️','Buien'], 82:['⛈️','Zware buien'],
+  95:['⛈️','Onweer'], 96:['⛈️','Onweer met hagel'], 99:['⛈️','Zwaar onweer']
+};
+
+async function laadWeer() {
+  try {
+    const url = 'https://api.open-meteo.com/v1/forecast?latitude=52.24&longitude=6.49' +
+      '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max' +
+      '&timezone=Europe%2FAmsterdam&start_date=2026-04-05&end_date=2026-04-06';
+    const r = await fetch(url);
+    const d = await r.json();
+    const dagen = ['1e Paasdag', '2e Paasdag'];
+    let html = '<div class="weer-dagen">';
+    for (let i = 0; i < 2; i++) {
+      const code = d.daily.weather_code[i];
+      const [icon, omschr] = WEER_CODES[code] || ['🌡️', 'Onbekend'];
+      const tMax  = Math.round(d.daily.temperature_2m_max[i]);
+      const tMin  = Math.round(d.daily.temperature_2m_min[i]);
+      const neersl = d.daily.precipitation_sum[i].toFixed(1);
+      const wind  = Math.round(d.daily.wind_speed_10m_max[i]);
+      html += `<div class="weer-dag">
+        <div class="dag-naam">${dagen[i]}</div>
+        <div class="weer-icon">${icon}</div>
+        <div class="weer-omschrijving">${omschr}</div>
+        <div class="temp">${tMax}° / ${tMin}°</div>
+        <div class="weer-detail">💧 ${neersl} mm &nbsp; 💨 ${wind} km/u</div>
+      </div>`;
+    }
+    html += '</div><p style="font-size:0.72rem;color:#9ca3af;margin-top:0.6rem;text-align:right">Bron: Open-Meteo</p>';
+    document.getElementById('weer-inhoud').innerHTML = html;
+  } catch(e) {
+    document.getElementById('weer-inhoud').innerHTML =
+      '<span class="weer-laden">Voorspelling tijdelijk niet beschikbaar</span>';
+  }
+}
+laadWeer();
+</script>
 
 {% endblock %}

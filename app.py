@@ -7,16 +7,15 @@ import os
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(16))
 ADMIN_TOKEN = os.environ.get('ADMIN_TOKEN', 'pasen2026admin')
-DATABASE_URL = os.environ.get('DATABASE_URL')  # Render zet dit automatisch
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
-# ── Database-abstractie: werkt met zowel SQLite (lokaal) als PostgreSQL (Render) ──
+# ── Database-abstractie: SQLite lokaal, PostgreSQL op Render ──
 
 if DATABASE_URL:
     import psycopg2
     import psycopg2.extras
 
     class DbConn:
-        """Wrapper zodat psycopg2 dezelfde API heeft als sqlite3."""
         def __init__(self):
             self._conn = psycopg2.connect(
                 DATABASE_URL,
@@ -24,7 +23,7 @@ if DATABASE_URL:
             )
 
         def execute(self, query, params=()):
-            query = query.replace('?', '%s')   # SQLite → PostgreSQL placeholders
+            query = query.replace('?', '%s')
             cur = self._conn.cursor()
             cur.execute(query, params)
             return cur
@@ -46,21 +45,18 @@ if DATABASE_URL:
 
     def init_db():
         with get_db() as conn:
-            conn.execute('''
-                CREATE TABLE IF NOT EXISTS gezinnen (
-                    id SERIAL PRIMARY KEY,
-                    naam TEXT NOT NULL,
-                    token TEXT UNIQUE NOT NULL
-                )
-            ''')
-            conn.execute('''
-                CREATE TABLE IF NOT EXISTS bijdragen (
-                    id SERIAL PRIMARY KEY,
-                    gezin_id INTEGER NOT NULL REFERENCES gezinnen(id) ON DELETE CASCADE,
-                    categorie TEXT NOT NULL,
-                    omschrijving TEXT NOT NULL
-                )
-            ''')
+            conn.execute('''CREATE TABLE IF NOT EXISTS gezinnen (
+                id SERIAL PRIMARY KEY, naam TEXT NOT NULL, token TEXT UNIQUE NOT NULL)''')
+            conn.execute('''CREATE TABLE IF NOT EXISTS bijdragen (
+                id SERIAL PRIMARY KEY,
+                gezin_id INTEGER NOT NULL REFERENCES gezinnen(id) ON DELETE CASCADE,
+                categorie TEXT NOT NULL, omschrijving TEXT NOT NULL)''')
+            conn.execute('''CREATE TABLE IF NOT EXISTS personen (
+                id SERIAL PRIMARY KEY,
+                gezin_id INTEGER NOT NULL REFERENCES gezinnen(id) ON DELETE CASCADE,
+                naam TEXT NOT NULL)''')
+            conn.execute('''CREATE TABLE IF NOT EXISTS instellingen (
+                sleutel TEXT PRIMARY KEY, waarde TEXT)''')
 
 else:
     DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pasen.db')
@@ -74,22 +70,18 @@ else:
 
     def init_db():
         with get_db() as conn:
-            conn.execute('''
-                CREATE TABLE IF NOT EXISTS gezinnen (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    naam TEXT NOT NULL,
-                    token TEXT UNIQUE NOT NULL
-                )
-            ''')
-            conn.execute('''
-                CREATE TABLE IF NOT EXISTS bijdragen (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    gezin_id INTEGER NOT NULL,
-                    categorie TEXT NOT NULL,
-                    omschrijving TEXT NOT NULL,
-                    FOREIGN KEY (gezin_id) REFERENCES gezinnen(id) ON DELETE CASCADE
-                )
-            ''')
+            conn.execute('''CREATE TABLE IF NOT EXISTS gezinnen (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, naam TEXT NOT NULL, token TEXT UNIQUE NOT NULL)''')
+            conn.execute('''CREATE TABLE IF NOT EXISTS bijdragen (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                gezin_id INTEGER NOT NULL, categorie TEXT NOT NULL, omschrijving TEXT NOT NULL,
+                FOREIGN KEY (gezin_id) REFERENCES gezinnen(id) ON DELETE CASCADE)''')
+            conn.execute('''CREATE TABLE IF NOT EXISTS personen (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                gezin_id INTEGER NOT NULL, naam TEXT NOT NULL,
+                FOREIGN KEY (gezin_id) REFERENCES gezinnen(id) ON DELETE CASCADE)''')
+            conn.execute('''CREATE TABLE IF NOT EXISTS instellingen (
+                sleutel TEXT PRIMARY KEY, waarde TEXT)''')
 
 
 # ── Hulpfuncties ──
@@ -107,22 +99,29 @@ def get_local_ip():
 
 def laad_overzicht():
     with get_db() as conn:
-        gezinnen = conn.execute('SELECT * FROM gezinnen ORDER BY naam').fetchall()
+        gezinnen  = conn.execute('SELECT * FROM gezinnen ORDER BY naam').fetchall()
         bijdragen = conn.execute('SELECT * FROM bijdragen').fetchall()
+        personen  = conn.execute('SELECT * FROM personen').fetchall()
 
     data = {}
     for g in gezinnen:
         data[g['id']] = {
-            'naam': g['naam'],
-            'token': g['token'],
-            'eten': [],
-            'drinken': []
+            'naam': g['naam'], 'token': g['token'],
+            'eten': [], 'drinken': [], 'personen': []
         }
     for b in bijdragen:
         if b['gezin_id'] in data:
             data[b['gezin_id']][b['categorie']].append(b['omschrijving'])
-
+    for p in personen:
+        if p['gezin_id'] in data:
+            data[p['gezin_id']]['personen'].append(p['naam'])
     return data
+
+
+def get_aankondiging():
+    with get_db() as conn:
+        row = conn.execute("SELECT waarde FROM instellingen WHERE sleutel = 'aankondiging'").fetchone()
+    return row['waarde'] if row and row['waarde'] else ''
 
 
 # ── Routes ──
@@ -130,8 +129,9 @@ def laad_overzicht():
 @app.route('/')
 def index():
     data = laad_overzicht()
+    aankondiging = get_aankondiging()
     base_url = request.url_root.rstrip('/')
-    return render_template('index.html', data=data, base_url=base_url)
+    return render_template('index.html', data=data, aankondiging=aankondiging, base_url=base_url)
 
 
 @app.route('/aanmelden', methods=['GET', 'POST'])
@@ -161,41 +161,62 @@ def bewerk(token):
 
         if request.method == 'POST':
             conn.execute('DELETE FROM bijdragen WHERE gezin_id = ?', (gezin['id'],))
+            conn.execute('DELETE FROM personen WHERE gezin_id = ?', (gezin['id'],))
+
             for item in request.form.getlist('eten[]'):
                 if item.strip():
                     conn.execute(
                         'INSERT INTO bijdragen (gezin_id, categorie, omschrijving) VALUES (?, ?, ?)',
-                        (gezin['id'], 'eten', item.strip())
-                    )
+                        (gezin['id'], 'eten', item.strip()))
             for item in request.form.getlist('drinken[]'):
                 if item.strip():
                     conn.execute(
                         'INSERT INTO bijdragen (gezin_id, categorie, omschrijving) VALUES (?, ?, ?)',
-                        (gezin['id'], 'drinken', item.strip())
-                    )
+                        (gezin['id'], 'drinken', item.strip()))
+            for naam in request.form.getlist('personen[]'):
+                if naam.strip():
+                    conn.execute(
+                        'INSERT INTO personen (gezin_id, naam) VALUES (?, ?)',
+                        (gezin['id'], naam.strip()))
+
             flash('Bijdragen opgeslagen!', 'success')
             return redirect(url_for('index'))
 
-        bijdragen = conn.execute(
-            'SELECT * FROM bijdragen WHERE gezin_id = ?', (gezin['id'],)
-        ).fetchall()
+        bijdragen = conn.execute('SELECT * FROM bijdragen WHERE gezin_id = ?', (gezin['id'],)).fetchall()
+        personen  = conn.execute('SELECT naam FROM personen WHERE gezin_id = ?', (gezin['id'],)).fetchall()
 
-    eten = [b['omschrijving'] for b in bijdragen if b['categorie'] == 'eten']
+    eten    = [b['omschrijving'] for b in bijdragen if b['categorie'] == 'eten']
     drinken = [b['omschrijving'] for b in bijdragen if b['categorie'] == 'drinken']
-    return render_template('bewerk.html', gezin=gezin, eten=eten, drinken=drinken, token=token)
+    namen   = [p['naam'] for p in personen]
+    return render_template('bewerk.html', gezin=gezin, eten=eten, drinken=drinken,
+                           namen=namen, token=token)
 
 
 @app.route(f'/admin/{ADMIN_TOKEN}')
 def admin():
     data = laad_overzicht()
+    aankondiging = get_aankondiging()
     base_url = request.url_root.rstrip('/')
-    return render_template('admin.html', data=data, base_url=base_url, admin_token=ADMIN_TOKEN)
+    return render_template('admin.html', data=data, aankondiging=aankondiging,
+                           base_url=base_url, admin_token=ADMIN_TOKEN)
+
+
+@app.route(f'/admin/{ADMIN_TOKEN}/aankondiging', methods=['POST'])
+def admin_aankondiging():
+    tekst = request.form.get('aankondiging', '').strip()
+    with get_db() as conn:
+        conn.execute(
+            "INSERT INTO instellingen (sleutel, waarde) VALUES ('aankondiging', ?) "
+            "ON CONFLICT (sleutel) DO UPDATE SET waarde = ?",
+            (tekst, tekst))
+    flash('Aankondiging opgeslagen!', 'success')
+    return redirect(url_for('admin'))
 
 
 @app.route(f'/admin/{ADMIN_TOKEN}/toevoegen', methods=['POST'])
 def admin_toevoegen():
     naam = request.form.get('naam', '').strip()
-    eten_items = [x.strip() for x in request.form.get('eten', '').split('\n') if x.strip()]
+    eten_items    = [x.strip() for x in request.form.get('eten', '').split('\n') if x.strip()]
     drinken_items = [x.strip() for x in request.form.get('drinken', '').split('\n') if x.strip()]
 
     if naam:
@@ -205,15 +226,11 @@ def admin_toevoegen():
                 conn.execute('INSERT INTO gezinnen (naam, token) VALUES (?, ?)', (naam, token))
                 gezin = conn.execute('SELECT id FROM gezinnen WHERE token = ?', (token,)).fetchone()
                 for item in eten_items:
-                    conn.execute(
-                        'INSERT INTO bijdragen (gezin_id, categorie, omschrijving) VALUES (?, ?, ?)',
-                        (gezin['id'], 'eten', item)
-                    )
+                    conn.execute('INSERT INTO bijdragen (gezin_id, categorie, omschrijving) VALUES (?, ?, ?)',
+                                 (gezin['id'], 'eten', item))
                 for item in drinken_items:
-                    conn.execute(
-                        'INSERT INTO bijdragen (gezin_id, categorie, omschrijving) VALUES (?, ?, ?)',
-                        (gezin['id'], 'drinken', item)
-                    )
+                    conn.execute('INSERT INTO bijdragen (gezin_id, categorie, omschrijving) VALUES (?, ?, ?)',
+                                 (gezin['id'], 'drinken', item))
             flash(f'Gezin "{naam}" toegevoegd!', 'success')
         except DB_ERROR:
             flash('Fout bij toevoegen.', 'error')
@@ -226,20 +243,19 @@ def admin_verwijder(gezin_id):
         gezin = conn.execute('SELECT naam FROM gezinnen WHERE id = ?', (gezin_id,)).fetchone()
         if gezin:
             conn.execute('DELETE FROM bijdragen WHERE gezin_id = ?', (gezin_id,))
+            conn.execute('DELETE FROM personen WHERE gezin_id = ?', (gezin_id,))
             conn.execute('DELETE FROM gezinnen WHERE id = ?', (gezin_id,))
             flash(f'Gezin "{gezin["naam"]}" verwijderd.', 'success')
     return redirect(url_for('admin'))
 
 
-# Init database bij opstarten (ook via gunicorn)
 init_db()
 
 if __name__ == '__main__':
     ip = get_local_ip()
     port = int(os.environ.get('PORT', 5001))
-    print(f'\n🐣 Pasen App gestart!')
+    print(f'\n🐣 Pasen-Dingspelerberg App gestart!')
     print(f'   Lokaal:   http://127.0.0.1:{port}')
     print(f'   Netwerk:  http://{ip}:{port}')
     print(f'   Admin:    http://{ip}:{port}/admin/{ADMIN_TOKEN}')
-    print(f'\nDeel de netwerk-URL met familie (zorg dat je op hetzelfde wifi-netwerk zit)\n')
     app.run(host='0.0.0.0', port=port, debug=False)

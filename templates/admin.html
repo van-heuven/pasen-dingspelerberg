@@ -88,6 +88,25 @@
     🔒 Admin-pagina &mdash; deel deze URL niet met andere familieleden
 </div>
 
+<!-- Aankondiging bewerken -->
+<div class="card" style="margin-bottom:1.5rem">
+    <h2>📢 Aankondiging / Bijzonderheden</h2>
+    <p style="color:#6b7280;font-size:0.9rem;margin-bottom:1rem">
+        Dit blok verschijnt bovenaan de pagina voor alle bezoekers. Gebruik het voor begintijd, parkeren, dresscode, etc.
+    </p>
+    <form method="POST" action="/admin/{{ admin_token }}/aankondiging">
+        <div class="form-group">
+            <textarea name="aankondiging" rows="4"
+                placeholder="bijv. We beginnen om 12:00 uur. Parkeren kan op het erf. Neem een campingstoel mee! 🌸"
+                style="width:100%">{{ aankondiging }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">💾 Opslaan</button>
+        {% if aankondiging %}
+        <span style="font-size:0.85rem;color:#6b7280;margin-left:1rem">✅ Momenteel zichtbaar voor iedereen</span>
+        {% endif %}
+    </form>
+</div>
+
 <div class="twee-kolommen">
 
     <!-- Nieuw gezin toevoegen -->
