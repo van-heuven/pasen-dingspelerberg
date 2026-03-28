@@ -1,0 +1,12 @@
+name: Keep app alive
+
+on:
+  schedule:
+    - cron: '*/10 6-22 * * *'  # Elke 10 minuten, tussen 6:00 en 22:00
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Pasen app
+        run: curl -s https://pasen-dingspelerberg.onrender.com > /dev/null
