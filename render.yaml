@@ -1,17 +1,20 @@
 services:
   - type: web
-    name: pasen-thuis
+    name: pasen-dingspelerberg
     runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
-    disk:
-      name: pasen-data
-      mountPath: /data
-      sizeGB: 1
     envVars:
-      - key: DB_PATH
-        value: /data/pasen.db
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pasen-db
+          property: connectionString
       - key: SECRET_KEY
         generateValue: true
       - key: ADMIN_TOKEN
         value: pasen2026admin
+
+databases:
+  - name: pasen-db
+    databaseName: pasen
+    plan: free

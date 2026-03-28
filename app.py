@@ -5,44 +5,94 @@ import socket
 import os
 
 app = Flask(__name__)
-
-# Stabiele secret key via omgevingsvariabele (verplicht voor productie)
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(16))
+ADMIN_TOKEN = os.environ.get('ADMIN_TOKEN', 'pasen2026admin')
+DATABASE_URL = os.environ.get('DATABASE_URL')  # Render zet dit automatisch
 
-# Database-pad: lokaal naast app.py, op Render via /data (persistent disk)
-DB_PATH = os.environ.get('DB_PATH', os.path.join(os.path.dirname(__file__), 'pasen.db'))
+# ── Database-abstractie: werkt met zowel SQLite (lokaal) als PostgreSQL (Render) ──
 
-# Admin-wachtwoord via omgevingsvariabele
-ADMIN_TOKEN = os.environ.get('ADMIN_TOKEN', 'pasen2025admin')
+if DATABASE_URL:
+    import psycopg2
+    import psycopg2.extras
 
-
-def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-def init_db():
-    # Zorg dat de map bestaat (nodig voor persistent disk op Render)
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    with get_db() as conn:
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS gezinnen (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                naam TEXT NOT NULL,
-                token TEXT UNIQUE NOT NULL
+    class DbConn:
+        """Wrapper zodat psycopg2 dezelfde API heeft als sqlite3."""
+        def __init__(self):
+            self._conn = psycopg2.connect(
+                DATABASE_URL,
+                cursor_factory=psycopg2.extras.RealDictCursor
             )
-        ''')
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS bijdragen (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                gezin_id INTEGER NOT NULL,
-                categorie TEXT NOT NULL,
-                omschrijving TEXT NOT NULL,
-                FOREIGN KEY (gezin_id) REFERENCES gezinnen(id) ON DELETE CASCADE
-            )
-        ''')
 
+        def execute(self, query, params=()):
+            query = query.replace('?', '%s')   # SQLite → PostgreSQL placeholders
+            cur = self._conn.cursor()
+            cur.execute(query, params)
+            return cur
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, *_):
+            if exc_type is None:
+                self._conn.commit()
+            else:
+                self._conn.rollback()
+            self._conn.close()
+
+    def get_db():
+        return DbConn()
+
+    DB_ERROR = psycopg2.IntegrityError
+
+    def init_db():
+        with get_db() as conn:
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS gezinnen (
+                    id SERIAL PRIMARY KEY,
+                    naam TEXT NOT NULL,
+                    token TEXT UNIQUE NOT NULL
+                )
+            ''')
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS bijdragen (
+                    id SERIAL PRIMARY KEY,
+                    gezin_id INTEGER NOT NULL REFERENCES gezinnen(id) ON DELETE CASCADE,
+                    categorie TEXT NOT NULL,
+                    omschrijving TEXT NOT NULL
+                )
+            ''')
+
+else:
+    DB_PATH = os.environ.get('DB_PATH', os.path.join(os.path.dirname(__file__), 'pasen.db'))
+
+    def get_db():
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    DB_ERROR = sqlite3.IntegrityError
+
+    def init_db():
+        with get_db() as conn:
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS gezinnen (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    naam TEXT NOT NULL,
+                    token TEXT UNIQUE NOT NULL
+                )
+            ''')
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS bijdragen (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    gezin_id INTEGER NOT NULL,
+                    categorie TEXT NOT NULL,
+                    omschrijving TEXT NOT NULL,
+                    FOREIGN KEY (gezin_id) REFERENCES gezinnen(id) ON DELETE CASCADE
+                )
+            ''')
+
+
+# ── Hulpfuncties ──
 
 def get_local_ip():
     try:
@@ -75,6 +125,8 @@ def laad_overzicht():
     return data
 
 
+# ── Routes ──
+
 @app.route('/')
 def index():
     data = laad_overzicht()
@@ -93,7 +145,7 @@ def aanmelden():
                     conn.execute('INSERT INTO gezinnen (naam, token) VALUES (?, ?)', (naam, token))
                 flash(f'Gezin "{naam}" is aangemeld! Bewaar de link om later aan te passen.', 'success')
                 return redirect(url_for('bewerk', token=token))
-            except sqlite3.IntegrityError:
+            except DB_ERROR:
                 flash('Er is een fout opgetreden. Probeer opnieuw.', 'error')
         else:
             flash('Vul een gezinsnaam in.', 'error')
@@ -109,7 +161,6 @@ def bewerk(token):
 
         if request.method == 'POST':
             conn.execute('DELETE FROM bijdragen WHERE gezin_id = ?', (gezin['id'],))
-
             for item in request.form.getlist('eten[]'):
                 if item.strip():
                     conn.execute(
@@ -164,7 +215,7 @@ def admin_toevoegen():
                         (gezin['id'], 'drinken', item)
                     )
             flash(f'Gezin "{naam}" toegevoegd!', 'success')
-        except sqlite3.IntegrityError:
+        except DB_ERROR:
             flash('Fout bij toevoegen.', 'error')
     return redirect(url_for('admin'))
 
