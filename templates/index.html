@@ -224,9 +224,41 @@
 
     <div class="weer-box">
         <h3>🌤️ Weer op Pasen – Markelo</h3>
-        <div id="weer-inhoud">
-            <span class="weer-laden">Weersvoorspelling laden…</span>
+        {% if weer %}
+        <div class="weer-dagen">
+            {% for dag in weer %}
+            <div class="weer-dag">
+                <div class="dag-naam">{{ dag.dag }}</div>
+                {% if dag.icoon %}
+                <img src="{{ dag.icoon }}" alt="{{ dag.omschrijving }}" style="width:48px;height:48px;margin:0.4rem auto;display:block">
+                {% else %}
+                <div class="weer-icon">🌡️</div>
+                {% endif %}
+                <div class="weer-omschrijving">{{ dag.omschrijving }}</div>
+                <div class="temp">{{ dag.temp_max }}° / {{ dag.temp_min }}°</div>
+                <div class="weer-detail">
+                    ☔ {{ dag.regen_kans }}% &nbsp; 💧 {{ dag.mm_regen }} mm<br>
+                    💨 Bft {{ dag.windkracht }} {{ dag.windrichting }} &nbsp; ☀️ {{ dag.zon_kans }}%
+                </div>
+            </div>
+            {% endfor %}
         </div>
+        <p style="font-size:0.72rem;color:#9ca3af;margin-top:0.8rem;text-align:right">
+            Bron: <a href="https://www.buienradar.nl" target="_blank" style="color:#9ca3af">Buienradar</a>
+        </p>
+        {% elif weer is none %}
+        <div style="text-align:center;padding:1.5rem">
+            <div style="font-size:2rem">📅</div>
+            <p style="color:#6b7280;font-size:0.9rem;margin-top:0.5rem">
+                De voorspelling voor Pasen is nog niet beschikbaar op Buienradar.<br>
+                <small>Kom een paar dagen van tevoren terug!</small>
+            </p>
+            <a href="https://www.buienradar.nl/nederland/weerbericht/weersverwachting-markelo"
+               target="_blank" style="font-size:0.85rem;color:#7c3aed;font-weight:600">
+               Bekijk op Buienradar.nl →
+            </a>
+        </div>
+        {% endif %}
     </div>
 
 </div>
@@ -278,49 +310,5 @@
 </div>
 {% endif %}
 
-<script>
-const WEER_CODES = {
-  0:['☀️','Zonnig'], 1:['🌤️','Licht bewolkt'], 2:['⛅','Halfbewolkt'],
-  3:['☁️','Bewolkt'], 45:['🌫️','Mist'], 48:['🌫️','Rijpmist'],
-  51:['🌦️','Motregen'], 53:['🌦️','Motregen'], 55:['🌧️','Zware motregen'],
-  61:['🌧️','Lichte regen'], 63:['🌧️','Regen'], 65:['🌧️','Zware regen'],
-  71:['❄️','Lichte sneeuw'], 73:['❄️','Sneeuw'], 75:['❄️','Zware sneeuw'],
-  80:['🌦️','Lichte buien'], 81:['🌧️','Buien'], 82:['⛈️','Zware buien'],
-  95:['⛈️','Onweer'], 96:['⛈️','Onweer met hagel'], 99:['⛈️','Zwaar onweer']
-};
-
-async function laadWeer() {
-  try {
-    const url = 'https://api.open-meteo.com/v1/forecast?latitude=52.24&longitude=6.49' +
-      '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max' +
-      '&timezone=Europe%2FAmsterdam&start_date=2026-04-05&end_date=2026-04-06';
-    const r = await fetch(url);
-    const d = await r.json();
-    const dagen = ['1e Paasdag', '2e Paasdag'];
-    let html = '<div class="weer-dagen">';
-    for (let i = 0; i < 2; i++) {
-      const code = d.daily.weather_code[i];
-      const [icon, omschr] = WEER_CODES[code] || ['🌡️', 'Onbekend'];
-      const tMax  = Math.round(d.daily.temperature_2m_max[i]);
-      const tMin  = Math.round(d.daily.temperature_2m_min[i]);
-      const neersl = d.daily.precipitation_sum[i].toFixed(1);
-      const wind  = Math.round(d.daily.wind_speed_10m_max[i]);
-      html += `<div class="weer-dag">
-        <div class="dag-naam">${dagen[i]}</div>
-        <div class="weer-icon">${icon}</div>
-        <div class="weer-omschrijving">${omschr}</div>
-        <div class="temp">${tMax}° / ${tMin}°</div>
-        <div class="weer-detail">💧 ${neersl} mm &nbsp; 💨 ${wind} km/u</div>
-      </div>`;
-    }
-    html += '</div><p style="font-size:0.72rem;color:#9ca3af;margin-top:0.6rem;text-align:right">Bron: Open-Meteo</p>';
-    document.getElementById('weer-inhoud').innerHTML = html;
-  } catch(e) {
-    document.getElementById('weer-inhoud').innerHTML =
-      '<span class="weer-laden">Voorspelling tijdelijk niet beschikbaar</span>';
-  }
-}
-laadWeer();
-</script>
 
 {% endblock %}

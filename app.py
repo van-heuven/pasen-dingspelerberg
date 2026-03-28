@@ -3,6 +3,9 @@ import sqlite3
 import secrets
 import socket
 import os
+import urllib.request
+import json
+from datetime import datetime, timezone
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(16))
@@ -118,6 +121,40 @@ def laad_overzicht():
     return data
 
 
+def get_buienradar_weer():
+    """Haal weersvoorspelling voor Pasen op via Buienradar JSON feed."""
+    PASEN_DATUMS = {'05-04-2026': '1e Paasdag', '06-04-2026': '2e Paasdag'}
+    try:
+        req = urllib.request.Request(
+            'https://data.buienradar.nl/2.0/feed/json',
+            headers={'User-Agent': 'PasenApp/1.0'}
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+
+        forecasts = data.get('forecast', {}).get('weatherforecast', [])
+        resultaat = []
+        for f in forecasts:
+            datum = f.get('dateformatted', '')  # DD-MM-YYYY
+            if datum in PASEN_DATUMS:
+                resultaat.append({
+                    'dag':          PASEN_DATUMS[datum],
+                    'datum':        datum,
+                    'omschrijving': f.get('weatherdescription', ''),
+                    'temp_min':     f.get('mintemperature', '?'),
+                    'temp_max':     f.get('maxtemperature', '?'),
+                    'regen_kans':   f.get('rainchance', '?'),
+                    'mm_regen':     f.get('mmrainfall', '0'),
+                    'windkracht':   f.get('windspeed', '?'),
+                    'windrichting': f.get('winddirection', ''),
+                    'zon_kans':     f.get('sunchance', '?'),
+                    'icoon':        f.get('iconurl', ''),
+                })
+        return resultaat if resultaat else None
+    except Exception:
+        return None
+
+
 def get_aankondiging():
     with get_db() as conn:
         row = conn.execute("SELECT waarde FROM instellingen WHERE sleutel = 'aankondiging'").fetchone()
@@ -128,10 +165,12 @@ def get_aankondiging():
 
 @app.route('/')
 def index():
-    data = laad_overzicht()
+    data         = laad_overzicht()
     aankondiging = get_aankondiging()
-    base_url = request.url_root.rstrip('/')
-    return render_template('index.html', data=data, aankondiging=aankondiging, base_url=base_url)
+    weer         = get_buienradar_weer()
+    base_url     = request.url_root.rstrip('/')
+    return render_template('index.html', data=data, aankondiging=aankondiging,
+                           weer=weer, base_url=base_url)
 
 
 @app.route('/aanmelden', methods=['GET', 'POST'])
