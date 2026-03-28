@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: pasen-thuis
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    disk:
+      name: pasen-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: DB_PATH
+        value: /data/pasen.db
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ADMIN_TOKEN
+        value: pasen2026admin

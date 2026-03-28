@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Admin – Pasen Thuis 2026{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-banner {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border: 2px solid #f59e0b;
+        border-radius: 12px;
+        padding: 0.8rem 1.2rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+        color: #92400e;
+        font-weight: 600;
+    }
+
+    .twee-kolommen {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    @media (max-width: 640px) {
+        .twee-kolommen { grid-template-columns: 1fr; }
+    }
+
+    .gezin-rij {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        padding: 0.9rem;
+        border-radius: 10px;
+        background: #f9fafb;
+        margin-bottom: 0.7rem;
+        gap: 0.8rem;
+    }
+
+    .gezin-info { flex: 1; }
+    .gezin-rij-naam {
+        font-weight: 700;
+        color: #1a1a2e;
+        margin-bottom: 0.3rem;
+    }
+
+    .gezin-link {
+        font-family: monospace;
+        font-size: 0.78rem;
+        color: #7c3aed;
+        word-break: break-all;
+    }
+    .gezin-link a { color: #7c3aed; }
+
+    .bijdrage-tags { margin-top: 0.4rem; }
+
+    .tag {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        border-radius: 10px;
+        font-size: 0.78rem;
+        margin: 0.15rem;
+    }
+    .tag-eten { background: #fef3c7; color: #92400e; }
+    .tag-drinken { background: #dbeafe; color: #1e40af; }
+
+    .rij-acties {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        flex-shrink: 0;
+    }
+
+    textarea {
+        min-height: 90px;
+        resize: vertical;
+    }
+
+    .sectie-sub {
+        font-size: 0.8rem;
+        color: #6b7280;
+        margin-bottom: 0.4rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="admin-banner">
+    🔒 Admin-pagina &mdash; deel deze URL niet met andere familieleden
+</div>
+
+<div class="twee-kolommen">
+
+    <!-- Nieuw gezin toevoegen -->
+    <div class="card">
+        <h2>➕ Gezin toevoegen</h2>
+        <p style="color:#6b7280; font-size:0.9rem; margin-bottom:1rem;">
+            Voeg een gezin toe en geef optioneel al een startbijdrage in.
+        </p>
+        <form method="POST" action="/admin/{{ admin_token }}/toevoegen">
+            <div class="form-group">
+                <label>Gezinsnaam</label>
+                <input type="text" name="naam" placeholder="bijv. Familie Jansen" required>
+            </div>
+            <div class="form-group">
+                <label>🍽️ Eten <span style="font-weight:400;color:#9ca3af">(één per regel, optioneel)</span></label>
+                <p class="sectie-sub">Dit wordt de beginvulling — het gezin kan dit later zelf aanpassen.</p>
+                <textarea name="eten" placeholder="bijv.&#10;Salade&#10;Quiche"></textarea>
+            </div>
+            <div class="form-group">
+                <label>🥤 Drinken <span style="font-weight:400;color:#9ca3af">(één per regel, optioneel)</span></label>
+                <textarea name="drinken" placeholder="bijv.&#10;Wijn&#10;Sinaasappelsap"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%">Gezin toevoegen</button>
+        </form>
+    </div>
+
+    <!-- Overzicht met links -->
+    <div class="card">
+        <h2>📋 Alle gezinnen ({{ data|length }})</h2>
+        <p style="color:#6b7280; font-size:0.9rem; margin-bottom:1rem;">
+            Deel de persoonlijke links met elk gezin zodat ze zelf kunnen aanpassen.
+        </p>
+
+        {% if data %}
+        {% for id, gezin in data.items() %}
+        <div class="gezin-rij">
+            <div class="gezin-info">
+                <div class="gezin-rij-naam">👨‍👩‍👧 {{ gezin.naam }}</div>
+                <div class="gezin-link">
+                    <a href="/bewerk/{{ gezin.token }}" target="_blank">
+                        {{ base_url }}/bewerk/{{ gezin.token }}
+                    </a>
+                </div>
+                <div class="bijdrage-tags">
+                    {% for item in gezin.eten %}
+                    <span class="tag tag-eten">🍽️ {{ item }}</span>
+                    {% endfor %}
+                    {% for item in gezin.drinken %}
+                    <span class="tag tag-drinken">🥤 {{ item }}</span>
+                    {% endfor %}
+                    {% if not gezin.eten and not gezin.drinken %}
+                    <span style="font-size:0.8rem;color:#9ca3af;font-style:italic">Nog niets</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="rij-acties">
+                <a href="/bewerk/{{ gezin.token }}" class="btn btn-secondary btn-sm" target="_blank">✏️</a>
+                <form method="POST" action="/admin/{{ admin_token }}/verwijder/{{ id }}"
+                      onsubmit="return confirm('Gezin {{ gezin.naam }} verwijderen?')">
+                    <button type="submit" class="btn btn-danger btn-sm">🗑️</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p style="color:#9ca3af;font-style:italic;text-align:center;padding:1rem">
+            Nog geen gezinnen aangemeld.
+        </p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Overzicht pagina link -->
+<div class="card" style="text-align:center">
+    <p style="color:#6b7280; margin-bottom:0.8rem">
+        📲 Deel het algemeen overzicht met iedereen:
+        <strong>{{ base_url }}/</strong>
+    </p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Naar overzicht →</a>
+</div>
+
+{% endblock %}

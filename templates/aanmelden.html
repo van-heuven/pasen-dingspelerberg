@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Aanmelden – Pasen Thuis 2026{% endblock %}
+
+{% block extra_css %}
+<style>
+    .aanmeld-wrapper {
+        max-width: 480px;
+        margin: 0 auto;
+    }
+    .aanmeld-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        text-align: center;
+    }
+    .aanmeld-card .icon {
+        font-size: 3rem;
+        margin-bottom: 0.8rem;
+    }
+    .aanmeld-card h2 {
+        margin-bottom: 0.5rem;
+    }
+    .aanmeld-card p {
+        color: #6b7280;
+        margin-bottom: 1.5rem;
+        font-size: 0.95rem;
+    }
+    .form-group {
+        text-align: left;
+    }
+    .acties {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="aanmeld-wrapper">
+    <div class="aanmeld-card">
+        <div class="icon">🐰</div>
+        <h2>Gezin aanmelden</h2>
+        <p>Meld jullie gezin aan en geef daarna in wat jullie meenemen naar Pasen.</p>
+
+        <form method="POST">
+            <div class="form-group">
+                <label for="naam">Naam van jullie gezin</label>
+                <input type="text" id="naam" name="naam"
+                       placeholder="bijv. Familie de Vries"
+                       autofocus required
+                       maxlength="80">
+            </div>
+
+            <div class="acties">
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">← Terug</a>
+                <button type="submit" class="btn btn-primary">Aanmelden →</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

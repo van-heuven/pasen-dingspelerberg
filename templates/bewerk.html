@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Bijdragen – {{ gezin.naam }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .gezin-header {
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+    .gezin-header h2 {
+        font-size: 1.6rem;
+        color: #1a1a2e;
+    }
+    .gezin-header p {
+        color: #6b7280;
+        margin-top: 0.3rem;
+    }
+
+    .sectie {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+        margin-bottom: 1.5rem;
+    }
+
+    .sectie-titel {
+        font-size: 1.15rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .sectie-eten .sectie-titel { color: #92400e; }
+    .sectie-drinken .sectie-titel { color: #1e40af; }
+
+    .input-row {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.6rem;
+        align-items: center;
+    }
+
+    .input-row input {
+        flex: 1;
+    }
+
+    .remove-btn {
+        background: #fee2e2;
+        color: #dc2626;
+        border: none;
+        border-radius: 8px;
+        width: 36px;
+        height: 36px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: background 0.15s;
+    }
+    .remove-btn:hover { background: #fca5a5; }
+
+    .add-btn {
+        background: none;
+        border: 2px dashed #d1d5db;
+        color: #6b7280;
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        cursor: pointer;
+        width: 100%;
+        font-size: 0.9rem;
+        margin-top: 0.4rem;
+        transition: border-color 0.2s, color 0.2s;
+        font-family: inherit;
+    }
+    .add-btn:hover {
+        border-color: #a855f7;
+        color: #7c3aed;
+    }
+
+    .acties {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .link-box {
+        background: #faf5ff;
+        border: 1px solid #e9d5ff;
+        border-radius: 12px;
+        padding: 1rem 1.2rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+        color: #555;
+    }
+    .link-box strong { color: #7c3aed; }
+    .link-box code {
+        display: block;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 0.4rem 0.7rem;
+        margin-top: 0.4rem;
+        font-size: 0.85rem;
+        word-break: break-all;
+        color: #374151;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="gezin-header">
+    <h2>✏️ Bijdragen van {{ gezin.naam }}</h2>
+    <p>Vul in wat jullie meenemen naar de Paasbijeenkomst</p>
+</div>
+
+<div class="link-box">
+    <strong>🔗 Jouw persoonlijke link</strong> – bewaar deze om later terug te komen en aan te passen:<br>
+    <code>{{ request.url }}</code>
+</div>
+
+<form method="POST">
+
+    <!-- Eten sectie -->
+    <div class="sectie sectie-eten">
+        <div class="sectie-titel">🍽️ Eten</div>
+        <div id="eten-lijst">
+            {% for item in eten %}
+            <div class="input-row">
+                <input type="text" name="eten[]" value="{{ item }}" placeholder="bijv. quiche, salade, taart…">
+                <button type="button" class="remove-btn" onclick="verwijderRij(this)" title="Verwijderen">✕</button>
+            </div>
+            {% endfor %}
+            {% if not eten %}
+            <div class="input-row">
+                <input type="text" name="eten[]" placeholder="bijv. quiche, salade, taart…">
+                <button type="button" class="remove-btn" onclick="verwijderRij(this)" title="Verwijderen">✕</button>
+            </div>
+            {% endif %}
+        </div>
+        <button type="button" class="add-btn" onclick="voegToe('eten-lijst', 'eten[]', 'bijv. quiche, salade, taart…')">
+            + Eten toevoegen
+        </button>
+    </div>
+
+    <!-- Drinken sectie -->
+    <div class="sectie sectie-drinken">
+        <div class="sectie-titel">🥤 Drinken</div>
+        <div id="drinken-lijst">
+            {% for item in drinken %}
+            <div class="input-row">
+                <input type="text" name="drinken[]" value="{{ item }}" placeholder="bijv. wijn, sap, water…">
+                <button type="button" class="remove-btn" onclick="verwijderRij(this)" title="Verwijderen">✕</button>
+            </div>
+            {% endfor %}
+            {% if not drinken %}
+            <div class="input-row">
+                <input type="text" name="drinken[]" placeholder="bijv. wijn, sap, water…">
+                <button type="button" class="remove-btn" onclick="verwijderRij(this)" title="Verwijderen">✕</button>
+            </div>
+            {% endif %}
+        </div>
+        <button type="button" class="add-btn" onclick="voegToe('drinken-lijst', 'drinken[]', 'bijv. wijn, sap, water…')">
+            + Drinken toevoegen
+        </button>
+    </div>
+
+    <div class="acties">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">← Terug naar overzicht</a>
+        <button type="submit" class="btn btn-primary">💾 Opslaan</button>
+    </div>
+</form>
+
+<script>
+function voegToe(lijstId, naam, placeholder) {
+    const lijst = document.getElementById(lijstId);
+    const rij = document.createElement('div');
+    rij.className = 'input-row';
+    rij.innerHTML = `
+        <input type="text" name="${naam}" placeholder="${placeholder}" autofocus>
+        <button type="button" class="remove-btn" onclick="verwijderRij(this)" title="Verwijderen">✕</button>
+    `;
+    lijst.appendChild(rij);
+    rij.querySelector('input').focus();
+}
+
+function verwijderRij(knop) {
+    const rij = knop.closest('.input-row');
+    const lijst = rij.parentElement;
+    if (lijst.children.length > 1) {
+        rij.remove();
+    } else {
+        rij.querySelector('input').value = '';
+    }
+}
+</script>
+{% endblock %}

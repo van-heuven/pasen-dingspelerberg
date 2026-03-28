@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block title %}Overzicht – Pasen Thuis 2026{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-bar {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+    .stat {
+        background: white;
+        border-radius: 12px;
+        padding: 1rem 1.4rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        text-align: center;
+        flex: 1;
+        min-width: 120px;
+    }
+    .stat .number {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #a855f7;
+    }
+    .stat .label {
+        font-size: 0.85rem;
+        color: #6b7280;
+        margin-top: 0.2rem;
+    }
+
+    .gezin-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.2rem;
+    }
+
+    .gezin-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.3rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+        border-top: 4px solid #f9a8d4;
+        transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .gezin-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    }
+
+    .gezin-card:nth-child(3n+1) { border-top-color: #86efac; }
+    .gezin-card:nth-child(3n+2) { border-top-color: #fde68a; }
+    .gezin-card:nth-child(3n+3) { border-top-color: #f9a8d4; }
+
+    .gezin-naam {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #1a1a2e;
+        margin-bottom: 0.8rem;
+    }
+
+    .sectie-label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 0.4rem;
+        margin-top: 0.8rem;
+    }
+
+    .sectie-eten .sectie-label { color: #92400e; }
+    .sectie-drinken .sectie-label { color: #1e40af; }
+
+    .item-lijst {
+        list-style: none;
+        padding: 0;
+    }
+
+    .item-lijst li {
+        padding: 0.25rem 0;
+        font-size: 0.9rem;
+        color: #374151;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .item-lijst li::before {
+        content: '•';
+        color: #d1d5db;
+    }
+
+    .leeg {
+        color: #9ca3af;
+        font-style: italic;
+        font-size: 0.85rem;
+    }
+
+    .bewerk-link {
+        display: block;
+        margin-top: 1rem;
+        text-align: center;
+        font-size: 0.85rem;
+        color: #a855f7;
+        text-decoration: none;
+        padding: 0.4rem;
+        border-radius: 8px;
+        border: 1px dashed #d8b4fe;
+        transition: background 0.2s;
+    }
+    .bewerk-link:hover {
+        background: #faf5ff;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #9ca3af;
+    }
+    .empty-state .icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .share-box {
+        background: linear-gradient(135deg, #fdf4ff, #fef9f0);
+        border: 2px dashed #d8b4fe;
+        border-radius: 16px;
+        padding: 1.2rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    .share-box .share-icon { font-size: 1.8rem; }
+    .share-box p { margin: 0; font-size: 0.9rem; color: #555; flex: 1; }
+    .share-box strong { color: #7c3aed; }
+    .share-url {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 0.4rem 0.8rem;
+        font-family: monospace;
+        font-size: 0.85rem;
+        color: #374151;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Statistieken -->
+{% set totaal_eten = [] %}
+{% set totaal_drinken = [] %}
+{% for id, g in data.items() %}
+  {% for _ in g.eten %}{% if totaal_eten.append(1) %}{% endif %}{% endfor %}
+  {% for _ in g.drinken %}{% if totaal_drinken.append(1) %}{% endif %}{% endfor %}
+{% endfor %}
+
+<div class="stats-bar">
+    <div class="stat">
+        <div class="number">{{ data|length }}</div>
+        <div class="label">Gezinnen</div>
+    </div>
+    <div class="stat">
+        <div class="number">{{ totaal_eten|length }}</div>
+        <div class="label">🍽️ Etenswaren</div>
+    </div>
+    <div class="stat">
+        <div class="number">{{ totaal_drinken|length }}</div>
+        <div class="label">🥤 Dranken</div>
+    </div>
+</div>
+
+<!-- Deel-info -->
+<div class="share-box">
+    <span class="share-icon">📲</span>
+    <div>
+        <p><strong>Deel deze pagina</strong> met familie via je netwerk:<br>
+        <span class="share-url">{{ base_url }}/</span><br>
+        <small>(Iedereen die op hetzelfde wifi-netwerk zit kan dit openen)</small></p>
+    </div>
+    <a href="{{ url_for('aanmelden') }}" class="btn btn-primary">+ Gezin toevoegen</a>
+</div>
+
+<!-- Gezinnen -->
+{% if data %}
+<div class="gezin-grid">
+    {% for id, gezin in data.items() %}
+    <div class="gezin-card">
+        <div class="gezin-naam">👨‍👩‍👧 {{ gezin.naam }}</div>
+
+        <div class="sectie-eten">
+            <div class="sectie-label">🍽️ Eten</div>
+            {% if gezin.eten %}
+            <ul class="item-lijst">
+                {% for item in gezin.eten %}
+                <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <span class="leeg">Nog niets opgegeven</span>
+            {% endif %}
+        </div>
+
+        <div class="sectie-drinken">
+            <div class="sectie-label">🥤 Drinken</div>
+            {% if gezin.drinken %}
+            <ul class="item-lijst">
+                {% for item in gezin.drinken %}
+                <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <span class="leeg">Nog niets opgegeven</span>
+            {% endif %}
+        </div>
+
+        <a href="{{ url_for('bewerk', token=gezin.token) }}" class="bewerk-link">✏️ Aanpassen</a>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<div class="empty-state">
+    <div class="icon">🐣</div>
+    <h2>Nog geen gezinnen aangemeld</h2>
+    <p style="margin: 0.5rem 0 1.5rem">Voeg je eigen gezin toe om te beginnen!</p>
+    <a href="{{ url_for('aanmelden') }}" class="btn btn-primary">Eerste gezin toevoegen</a>
+</div>
+{% endif %}
+
+{% endblock %}
