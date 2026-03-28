@@ -63,7 +63,7 @@ if DATABASE_URL:
             ''')
 
 else:
-    DB_PATH = os.environ.get('DB_PATH', os.path.join(os.path.dirname(__file__), 'pasen.db'))
+    DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pasen.db')
 
     def get_db():
         conn = sqlite3.connect(DB_PATH)
