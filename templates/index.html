@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Overzicht – Pasen-Dingsproberg 2026{% endblock %}
+{% block title %}Overzicht – Pasen-Dingspelerberg 2026{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -123,29 +123,38 @@
         margin-bottom: 1rem;
     }
 
-    .share-box {
-        background: linear-gradient(135deg, #fdf4ff, #fef9f0);
-        border: 2px dashed #d8b4fe;
+    .locatie-box {
+        background: white;
         border-radius: 16px;
         padding: 1.2rem 1.5rem;
         margin-bottom: 1.5rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.07);
         display: flex;
+        gap: 1.5rem;
         align-items: center;
-        gap: 1rem;
         flex-wrap: wrap;
     }
-    .share-box .share-icon { font-size: 1.8rem; }
-    .share-box p { margin: 0; font-size: 0.9rem; color: #555; flex: 1; }
-    .share-box strong { color: #7c3aed; }
-    .share-url {
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 0.4rem 0.8rem;
-        font-family: monospace;
+    .locatie-info { flex: 1; min-width: 180px; }
+    .locatie-info h3 { font-size: 1rem; color: #1a1a2e; margin-bottom: 0.3rem; }
+    .locatie-info p { font-size: 0.95rem; color: #555; margin: 0; }
+    .locatie-info a {
+        display: inline-block;
+        margin-top: 0.6rem;
         font-size: 0.85rem;
-        color: #374151;
+        color: #7c3aed;
+        text-decoration: none;
+        font-weight: 600;
     }
+    .locatie-info a:hover { text-decoration: underline; }
+    .kaart-wrapper {
+        flex: 2;
+        min-width: 260px;
+        border-radius: 12px;
+        overflow: hidden;
+        height: 180px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .kaart-wrapper iframe { width: 100%; height: 100%; border: 0; }
 </style>
 {% endblock %}
 
@@ -174,12 +183,22 @@
     </div>
 </div>
 
-<!-- Deel-info -->
-<div class="share-box">
-    <span class="share-icon">📲</span>
-    <div>
-        <p><strong>Deel deze pagina</strong> met familie:<br>
-        <span class="share-url">{{ base_url }}/</span></p>
+<!-- Locatie -->
+<div class="locatie-box">
+    <div class="locatie-info">
+        <h3>📍 Locatie</h3>
+        <p><strong>Enkelaarsweg 1</strong><br>7475 MS Markelo</p>
+        <a href="https://maps.google.com/?q=Enkelaarsweg+1,+Markelo" target="_blank">
+            🗺️ Open in Google Maps
+        </a>
+    </div>
+    <div class="kaart-wrapper">
+        <iframe
+            src="https://maps.google.com/maps?q=Enkelaarsweg+1,+Markelo,+Nederland&output=embed&z=15"
+            allowfullscreen
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
     </div>
 </div>
 
