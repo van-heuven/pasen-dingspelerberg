@@ -6,15 +6,8 @@ services:
     startCommand: gunicorn app:app
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: pasen-db
-          property: connectionString
+        sync: false
       - key: SECRET_KEY
         generateValue: true
       - key: ADMIN_TOKEN
         value: pasen2026admin
-
-databases:
-  - name: pasen-db
-    databaseName: pasen
-    plan: free
