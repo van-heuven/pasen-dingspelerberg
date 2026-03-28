@@ -161,6 +161,50 @@
 
     .empty-state { text-align: center; padding: 3rem; color: #9ca3af; }
     .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
+
+    /* ── Totaaloverzicht ── */
+    .totaal-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.2rem;
+        margin-bottom: 1.5rem;
+    }
+    @media (max-width: 600px) { .totaal-grid { grid-template-columns: 1fr; } }
+
+    .totaal-box {
+        background: white;
+        border-radius: 16px;
+        padding: 1.3rem 1.5rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+    }
+    .totaal-box h3 {
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 0.9rem;
+        padding-bottom: 0.6rem;
+        border-bottom: 2px solid #f3f4f6;
+    }
+    .totaal-box.eten h3   { color: #92400e; }
+    .totaal-box.drinken h3 { color: #1e40af; }
+
+    .totaal-lijst { list-style: none; padding: 0; }
+    .totaal-lijst li {
+        padding: 0.3rem 0;
+        font-size: 0.9rem;
+        color: #374151;
+        border-bottom: 1px solid #f9fafb;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 0.5rem;
+    }
+    .totaal-lijst li:last-child { border-bottom: none; }
+    .totaal-gezin {
+        font-size: 0.78rem;
+        color: #9ca3af;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
 </style>
 {% endblock %}
 
@@ -202,6 +246,38 @@
         <div class="label">🥤 Dranken</div>
     </div>
 </div>
+
+<!-- Totaaloverzicht eten & drinken -->
+{% if totaal_eten|length > 0 or totaal_drinken|length > 0 %}
+<div class="totaal-grid">
+    <div class="totaal-box eten">
+        <h3>🍽️ Alles wat er te eten is</h3>
+        <ul class="totaal-lijst">
+            {% for id, g in data.items() %}
+              {% for item in g.eten %}
+              <li>
+                <span>{{ item }}</span>
+                <span class="totaal-gezin">({{ g.naam }})</span>
+              </li>
+              {% endfor %}
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="totaal-box drinken">
+        <h3>🥤 Alles wat er te drinken is</h3>
+        <ul class="totaal-lijst">
+            {% for id, g in data.items() %}
+              {% for item in g.drinken %}
+              <li>
+                <span>{{ item }}</span>
+                <span class="totaal-gezin">({{ g.naam }})</span>
+              </li>
+              {% endfor %}
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
 
 <!-- Locatie + Weer naast elkaar -->
 <div class="locatie-weer">
